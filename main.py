@@ -4,8 +4,6 @@ from scipy.stats import poisson
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.animation as animation
 from matplotlib.widgets import Slider, Button
-from IPython.display import display, clear_output
-import time
 
 
 def simulate_poisson_process(lambda_rate, T):
@@ -138,13 +136,14 @@ def interactive_rate_analysis(T, max_rate=10):
     plt.show()
 
 
-def analyze_convergence(lambda_rate, T, num_simulations=1000):
+def analyze_convergence(lambda_rate, T, num_simulations=1000, k=1):
     """
     Аналізує збіжність середнього числа подій до теоретичного значення.
 
     :param lambda_rate: Інтенсивність процесу
     :param T: Кінцевий час симуляції
     :param num_simulations: Кількість симуляцій
+    :param k: Число k для аналізу перших подій
     """
     event_counts = [len(simulate_poisson_process(lambda_rate, T)) for _ in range(num_simulations)]
     cumulative_means = np.cumsum(event_counts) / np.arange(1, num_simulations + 1)
@@ -158,6 +157,27 @@ def analyze_convergence(lambda_rate, T, num_simulations=1000):
     plt.legend()
     plt.grid(True)
     plt.show()
+
+    # Аналіз перших k подій
+    if k > 1:
+        first_k_events = []
+        for _ in range(num_simulations):
+            events = simulate_poisson_process(lambda_rate, T)
+            if len(events) >= k:
+                first_k_events.append(events[:k])
+
+        first_k_events = np.array(first_k_events)
+        mean_first_k = np.mean(first_k_events, axis=0)
+
+        plt.figure(figsize=(12, 6))
+        for i in range(k):
+            plt.plot(range(1, len(mean_first_k) + 1), mean_first_k, label=f'Середнє значення для перших {i+1} подій')
+        plt.xlabel('Номер події')
+        plt.ylabel('Середній час події')
+        plt.title('Середнє значення для перших k подій')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
 
 
 # Параметри симуляції
@@ -178,7 +198,7 @@ plot_real_time_process(lambda_rate, T)
 interactive_rate_analysis(T)
 
 # Аналіз збіжності
-analyze_convergence(lambda_rate, T)
+analyze_convergence(lambda_rate, T, k=3)
 
 print(f"Кількість змодельованих подій: {len(events)}")
 print(f"Середній інтервал між подіями: {np.mean(np.diff(events)):.4f}")
